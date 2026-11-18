@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FamilyGiftList Creator</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f6fb;
+  color:#243247;
+}
+header{
+  background:linear-gradient(135deg,#647be8,#8b62ce);
+  color:white;
+  text-align:center;
+  padding:35px 20px;
+}
+header h1{margin:0;font-size:32px}
+header p{margin:10px 0 0}
+.container{
+  max-width:850px;
+  margin:25px auto;
+  padding:20px;
+}
+.card{
+  background:white;
+  padding:22px;
+  border-radius:18px;
+  margin-bottom:20px;
+  box-shadow:0 4px 16px #0000000a;
+}
+h2{margin-top:0}
+input,button{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #d7deea;
+  font-size:16px;
+  margin-top:8px;
+}
+button{
+  background:#657ce7;
+  color:white;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+button:hover{opacity:.9}
+.remove{
+  background:#e76b6b;
+  width:auto;
+  padding:8px 12px;
+}
+.child-row{
+  display:grid;
+  grid-template-columns:1fr 100px auto;
+  gap:8px;
+  align-items:center;
+  margin:10px 0;
+}
+.preview{
+  background:#eef1ff;
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
+}
+.preview-children{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+}
+.preview-child{
+  background:white;
+  border-radius:12px;
+  padding:12px 20px;
+}
+.note{
+  background:#fff6dd;
+  padding:12px;
+  border-radius:10px;
+  font-size:14px;
+  line-height:1.5;
+}
+#status{font-weight:bold;text-align:center;margin-top:12px}
+@media(max-width:600px){
+  .container{padding:12px}
+  .child-row{grid-template-columns:1fr 75px auto}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🎁 FamilyGiftList Creator</h1>
+  <p>Create your own personalised family gift list website</p>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>🏡 Your family</h2>
+
+<label>Family name or website keyword</label>
+<input id="family" placeholder="e.g. Kelly or bananas543"
+       oninput="updatePreview()">
+
+<p>Choose a name that you can use when creating your website on Netlify.</p>
+
+<label>Private administration password</label>
+<input id="password" type="password"
+       placeholder="Create your password">
+
+</div>
+
+<div class="card">
+<h2>👨‍👩‍👧‍👦 Children</h2>
+<p>Add each child and their emoji.</p>
+
+<div id="children"></div>
+
+<button onclick="addChild()">➕ Add another child</button>
+</div>
+
+<div class="card">
+<h2>👀 Live preview</h2>
+
+<div class="preview">
+<h2 id="previewTitle">Our Family Gift List 🎁</h2>
+<div id="previewChildren" class="preview-children"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>📦 Create your website</h2>
+
+<p>When you are happy with your family details, press the button below to generate your personalised website.</p>
+
+<div class="note">
+<strong>Important:</strong> This first version generates a standalone website. Its password protection is basic and is not suitable for genuinely private information. A secure shared website with reservations and cloud syncing will need its own Firebase and server configuration.
+</div>
+
+<button onclick="downloadWebsite()">⬇️ Download my FamilyGiftList website</button>
+
+<p id="status"></p>
+</div>
+
+</div>
+
+<script>
+let children = [];
+
+function addChild(name="", emoji="🎁"){
+  children.push({name,emoji});
+  renderChildren();
+}
+
+function removeChild(index){
+  children.splice(index,1);
+  renderChildren();
+}
+
+function renderChildren(){
+  const container=document.getElementById("children");
+  container.innerHTML="";
+
+  children.forEach((child,index)=>{
+    const row=document.createElement("div");
+    row.className="child-row";
+
+    const name=document.createElement("input");
+    name.placeholder="Child's name";
+    name.value=child.name;
+    name.oninput=()=>{
+      children[index].name=name.value;
+      updatePreview();
+    };
+
+    const emoji=document.createElement("input");
+    emoji.placeholder="Emoji";
+    emoji.value=child.emoji;
+    emoji.oninput=()=>{
+      children[index].emoji=emoji.value;
+      updatePreview();
+    };
+
+    const remove=document.createElement("button");
+    remove.textContent="✖";
+    remove.className="remove";
+    remove.onclick=()=>removeChild(index);
+
+    row.append(name,emoji,remove);
+    container.appendChild(row);
+  });
+
+  updatePreview();
+}
+
+function updatePreview(){
+  const family=document.getElementById("family").value.trim();
+  document.getElementById("previewTitle").textContent=
+    family ? family+" Family Gift List 🎁" : "Our Family Gift List 🎁";
+
+  const preview=document.getElementById("previewChildren");
+  preview.innerHTML="";
+
+  children.forEach(child=>{
+    if(!child.name.trim())return;
+
+    const div=document.createElement("div");
+    div.className="preview-child";
+    div.textContent=child.emoji+" "+child.name;
+    preview.appendChild(div);
+  });
+}
+
+function downloadWebsite(){
+  const family=document.getElementById("family").value.trim();
+  const password=document.getElementById("password").value;
+
+  const validChildren=children.filter(c=>c.name.trim());
+
+  if(!family){
+    alert("Please enter your family name or keyword.");
+    return;
+  }
+
+  if(!password){
+    alert("Please create an administration password.");
+    return;
+  }
+
+  if(validChildren.length===0){
+    alert("Please add at least one child.");
+    return;
+  }
+
+  const safeFamily=JSON.stringify(family);
+  const safePassword=JSON.stringify(password);
+  const safeChildren=JSON.stringify(validChildren);
+
+  const website=`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${family} Family Gift List</title>
+<style>
+body{font-family:Arial;background:#f4f6fb;color:#263248;margin:0}
+header{background:linear-gradient(135deg,#647ce7,#9563cd);color:white;text-align:center;padding:30px}
+main{max-width:850px;margin:auto;padding:20px}
+.card{background:white;border-radius:16px;padding:20px;margin:18px 0;box-shadow:0 3px 12px #0001}
+button,input,select{padding:11px;border-radius:9px;border:1px solid #d8deea;font-size:16px;margin:5px 0}
+button{background:#687fe6;color:white;border:0;cursor:pointer}
+.gift{padding:12px;border-bottom:1px solid #eee}
+.hidden{display:none}
+.child{margin:12px 0}
+</style>
+</head>
+<body>
+<header>
+<h1 id="title"></h1>
+<p>Your family's gift list 🎁</p>
+</header>
+<main>
+<div class="card">
+<h2>🎁 Gift lists</h2>
+<div id="lists"></div>
+</div>
+
+<div class="card">
+<button onclick="login()">🔐 Family administration</button>
+<div id="admin" class="hidden">
+<h2>Add a gift</h2>
+<select id="child"></select>
+<input id="giftName" placeholder="Gift name">
+<input id="giftPrice" type="number" min="0" placeholder="Price">
+<input id="giftLink" placeholder="Website link (optional)">
+<button onclick="addGift()">Add gift</button>
+<button onclick="logout()">Exit administration</button>
+</div>
+</div>
+</main>
+<script>
+const family=${safeFamily};
+const password=${safePassword};
+const children=${safeChildren};
+let gifts=JSON.parse(localStorage.getItem("familyGifts")||"[]");
+
+document.getElementById("title").textContent=family+" Family Gift List 🎁";
+
+const childSelect=document.getElementById("child");
+children.forEach(c=>{
+const option=document.createElement("option");
+option.value=c.name;
+option.textContent=c.emoji+" "+c.name;
+childSelect.appendChild(option);
+});
+
+function save(){localStorage.setItem("familyGifts",JSON.stringify(gifts));render();}
+function render(){
+const lists=document.getElementById("lists");
+lists.innerHTML="";
+children.forEach(c=>{
+const section=document.createElement("div");
+section.className="child";
+const heading=document.createElement("h3");
+heading.textContent=c.emoji+" "+c.name;
+section.appendChild(heading);
+
+gifts.filter(g=>g.child===c.name&&!g.reserved).forEach(g=>{
+const div=document.createElement("div");
+div.className="gift";
+div.textContent=g.name+" — $"+g.price;
+if(g.link){
+const a=document.createElement("a");
+a.href=g.link;
+a.target="_blank";
+a.rel="noopener";
+a.textContent=" View gift";
+div.appendChild(a);
+}
+section.appendChild(div);
+});
+lists.appendChild(section);
+});
+}
+function login(){
+const entered=prompt("Administration password:");
+if(entered===password){
+document.getElementById("admin").classList.remove("hidden");
+}else if(entered!==null){
+alert("Incorrect password.");
+}
+}
+function logout(){document.getElementById("admin").classList.add("hidden");}
+function addGift(){
+const name=document.getElementById("giftName").value.trim();
+const price=document.getElementById("giftPrice").value;
+const link=document.getElementById("giftLink").value.trim();
+if(!name){alert("Enter a gift name.");return;}
+gifts.push({child:childSelect.value,name,price:price||"0",link,reserved:false});
+document.getElementById("giftName").value="";
+document.getElementById("giftPrice").value="";
+document.getElementById("giftLink").value="";
+save();
+}
+render();
+<\/script>
+</body>
+</html>`;
+
+  const blob=new Blob([website],{type:"text/html"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download="index.html";
+  link.click();
+  URL.revokeObjectURL(link.href);
+
+  document.getElementById("status").textContent=
+    "✅ Your personalised index.html has been downloaded!";
+}
+
+addChild();
+addChild();
+addChild();
+</script>
+</body>
+</html>
